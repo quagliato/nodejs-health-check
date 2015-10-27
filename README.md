@@ -1,5 +1,7 @@
 # nodejs-health-check
 
+**NOT A STATE OF THE ART CODE, I'M JUST MESSING AROUND!**
+
 A health check ping using node.js that notifies a e-mail address when the
 url is down or no responding 200 codes for a specific set of parameters.
 
