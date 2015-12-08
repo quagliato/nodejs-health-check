@@ -35,7 +35,7 @@ request(requestInfo, function(error, request, body){
 
   if (error || !parseTry || request.statusCode !== 200) {
     console.log(new Date().toISOString() + " " + appName + " is down!");
-    sendMail(appName + " id down!");
+    sendMail(appName + " is down!");
   } else {
     console.log(new Date().toISOString() + " " + appName + " is ok!");
   }
