@@ -1,0 +1,17 @@
+{
+  "smtp_settings": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "health-check@domain.tld",
+    "pass": "XXXXXXXXXXXXXXXXXXXXXXX"
+  },
+  "targets": [
+    {
+      "url": "http://url-to-request.com",
+      "method": "POST",
+      "app_name": "app name",
+      "report_email": "user@domain.ltd",
+      "body": {}
+    }
+  ]
+}
