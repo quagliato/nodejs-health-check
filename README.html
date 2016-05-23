@@ -1,0 +1,38 @@
+<h1>nodejs-health-check</h1>
+
+<p><strong>NOT A STATE OF THE ART CODE, I'M JUST MESSING AROUND!</strong></p>
+
+<p>A health check ping using node.js that notifies a e-mail address when the
+url is down or no responding 200 codes for a specific set of parameters.</p>
+
+<h2>Instructions</h2>
+
+<p>Copy the <em>config-example.json</em> file to <em>config.json</em> (or what other name you
+want to) and set it on index.js.</p>
+
+<p>Inside the config file, you have to fill the SMTP info (host, port, user and 
+pass) in two ways:</p>
+
+<ol>
+<li><p>One <em>smtp_settings</em> for all apps, right on the root of the object;</p></li>
+<li><p>One <em>smtp_settings</em> for each app;</p></li>
+</ol>
+
+<p>Master <em>smtp_settings</em> will always override app's <em>smtp_settings</em>.</p>
+
+<p>You will also have to fill the array <em>targets</em> with an object containing this
+properties:</p>
+
+<ul>
+<li><strong>url</strong>: The URL you want to monitor using http:// or https://;</li>
+<li><strong>method</strong>: The HTTP method you want to use. If nothing is provided, GET will be used;</li>
+<li><strong>app_name</strong>: This name will be used to the email's subject and content;</li>
+<li><strong>report_email</strong>: The email to which the report will be sent;</li>
+<li><strong>body</strong>: If the response should have any specific body, fill it here.</li>
+</ul>
+
+<p>Place the call in the crontab of a server and that's it!</p>
+
+<h2>Support</h2>
+
+<p>Got doubts? E-mail me at <a href="mailto:eduardo@quagliato.me">eduardo@quagliato.me</a>. ;)</p>
