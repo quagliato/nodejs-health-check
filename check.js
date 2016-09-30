@@ -1,22 +1,6 @@
 var fs      = require("fs");
 var request = require("request");
 
-if (process.env.CONFIG) {
-  processConfig(JSON.parse(process.env.CONFIG));
-} else if (process.env.CONFIG_FILE) {
-  fs.readFile(process.env.CONFIG_FILE, function(err, data){
-    if (err) {
-      console.log(new Date().toISOString() + " Could not load CONFIG_FILE");
-    } else {
-      var config = JSON.parse(data);
-      processConfig(config);
-    }
-  });
-} else {
-  console.log(new Date().toISOString() + " No config setted");
-  process.exit(1);
-}
-
 var processConfig = function(config){
   if (typeof config !== "object") {
     console.log(new Date().toISOString() + " The config file is not a array.");
@@ -105,3 +89,21 @@ var sendMail = function(to, subject, smtp_settings){
     console.log(new Date().toISOString() + ' "' + subject + '" is sent: ' + info.response);
   });
 };
+
+
+if (process.env.CONFIG) {
+  processConfig(JSON.parse(process.env.CONFIG));
+} else if (process.env.CONFIG_FILE) {
+  fs.readFile(process.env.CONFIG_FILE, function(err, data){
+    if (err) {
+      console.log(new Date().toISOString() + " Could not load CONFIG_FILE");
+    } else {
+      var config = JSON.parse(data);
+      processConfig(config);
+    }
+  });
+} else {
+  console.log(new Date().toISOString() + " No config setted");
+  process.exit(1);
+}
+
