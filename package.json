@@ -2,7 +2,10 @@
   "name": "nodejs-health-check",
   "version": "0.0.1",
   "description": "Pings URLs and trigger e-mail when it's unreachable.",
-  "main": "index.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "nodemailer": "^1.8.0",
     "nodemailer-smtp-transport": "^1.0.3",
