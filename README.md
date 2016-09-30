@@ -8,7 +8,7 @@ url is down or no responding 200 codes for a specific set of parameters.
 ## Instructions
 
 Copy the *config-example.json* file to *config.json* (or what other name you
-want to) and set it on index.js.
+want to) and set its path into the environment variable *CONFIG_FILE*.
 
 Inside the config file, you have to fill the SMTP info (host, port, user and 
 pass) in two ways:

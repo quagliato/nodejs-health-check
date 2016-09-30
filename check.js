@@ -1,42 +1,51 @@
 var fs      = require("fs");
 var request = require("request");
 
-var CONFIG_FILE = "config-example.json";
-
-fs.readFile(CONFIG_FILE, function(err, data){
-  if (err) {
-    console.log(new Date().toISOString() + " Could not load config.json");
-  } else {
-    var config = JSON.parse(data);
-    if (typeof config !== "object") {
-      console.log(new Date().toISOString() + " The config.json file is not a array.");
-    } else if (config.length === 0) {
-      console.log(new Date().toISOString() + " The config.json file is empty.");
+if (process.env.CONFIG) {
+  processConfig(JSON.parse(process.env.CONFIG));
+} else if (process.env.CONFIG_FILE) {
+  fs.readFile(process.env.CONFIG_FILE, function(err, data){
+    if (err) {
+      console.log(new Date().toISOString() + " Could not load CONFIG_FILE");
     } else {
-      var master_smtp_settings = false;
-      if (config.hasOwnProperty("smtp_settings")) {
-        master_smtp_settings = config.smtp_settings;
-      }
+      var config = JSON.parse(data);
+      processConfig(config);
+    }
+  });
+} else {
+  console.log(new Date().toISOString() + " No config setted");
+  process.exit(1);
+}
 
-      if (config.hasOwnProperty("targets")) {
-        if (config.targets.length === 0) {
-          console.log(new Date().toISOString() + " No targets in the config.json file.");
-        } else {
-          for (var i = 0; i < config.targets.length; i++) {
-            var target = config.targets[i];
+var processConfig = function(config){
+  if (typeof config !== "object") {
+    console.log(new Date().toISOString() + " The config file is not a array.");
+  } else if (config.length === 0) {
+    console.log(new Date().toISOString() + " The config file is empty.");
+  } else {
+    var master_smtp_settings = false;
+    if (config.hasOwnProperty("smtp_settings")) {
+      master_smtp_settings = config.smtp_settings;
+    }
 
-            if (master_smtp_settings === false && !target.hasOwnProperty("smtp_settings")) {
-              console.log(new Date().toISOString() + " No master SMTP settings and no target's SMTP settings.");
-              return;
-            }
+    if (config.hasOwnProperty("targets")) {
+      if (config.targets.length === 0) {
+        console.log(new Date().toISOString() + " No targets in the config");
+      } else {
+        for (var i = 0; i < config.targets.length; i++) {
+          var target = config.targets[i];
 
-            requestToTarget(target, master_smtp_settings);
+          if (master_smtp_settings === false && !target.hasOwnProperty("smtp_settings")) {
+            console.log(new Date().toISOString() + " No master SMTP settings and no target's SMTP settings.");
+            return;
           }
+
+          requestToTarget(target, master_smtp_settings);
         }
       }
     }
   }
-});
+};
 
 var requestToTarget = function(target, master_smtp_settings){
   var requestInfo = {
