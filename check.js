@@ -38,10 +38,9 @@ var requestToTarget = function(target, master_smtp_settings){
     "body" : target.body,
     "json": true
   };
-
-  request(requestInfo, function(error, request, body){
+  
+  request(requestInfo, function(error, req, body){
     var parseTry = false;
-
     try {
       if (typeof body === "string") {
         parseTry = JSON.parse(body);
@@ -52,16 +51,21 @@ var requestToTarget = function(target, master_smtp_settings){
       parseTry = false;
     }
 
-    if (error || request.statusCode !== 200) {
-      console.log(new Date().toISOString() + " " + target.app_name + " is down!");
-      sendMail(target.report_email, target.app_name + " is down!", master_smtp_settings !== false ? master_smtp_settings : target.smtp_settings);
+    if (error || req.statusCode !== 200) {
+      var emailContent = new Date().toISOString() + " " + target.app_name + " is down!";
+      emailContent += "\n" + "Status Code: " + req.statusCode;
+      emailContent += "\n" + "Error: " + JSON.stringify(error);
+      
+      console.log(emailContent);
+
+      sendMail(target.report_email, target.app_name + " is down!", master_smtp_settings !== false ? master_smtp_settings : target.smtp_settings, emailContent);
     } else {
       console.log(new Date().toISOString() + " " + target.app_name + " is ok!");
     }
   });
 };
 
-var sendMail = function(to, subject, smtp_settings){
+var sendMail = function(to, subject, smtp_settings, content){
   var nodemailer = require("nodemailer");
   var smtpTransport = require('nodemailer-smtp-transport');
 
@@ -75,11 +79,15 @@ var sendMail = function(to, subject, smtp_settings){
     }
   }));
 
+  while (content.indexOf("\n") >= 0) {
+    content = content.replace("\n", "\n<br>");
+  }
+
   var mailOptions = {
     to: to, // list of receivers
     subject: subject, // Subject line
     text: subject, // plaintext body
-    html: '<p>' + subject + '</p>' // html body
+    html: content || ("<p>" + subject + "</p>") // html body
   };
 
   transporter.sendMail(mailOptions, function(error, info){
@@ -97,6 +105,8 @@ if (process.env.CONFIG) {
   fs.readFile(process.env.CONFIG_FILE, function(err, data){
     if (err) {
       console.log(new Date().toISOString() + " Could not load CONFIG_FILE");
+      console.log(err);
+      process.exit(1);
     } else {
       var config = JSON.parse(data);
       processConfig(config);
