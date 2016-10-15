@@ -1,6 +1,16 @@
-var fs      = require("fs");
-var request = require("request");
+// check.js
+// It checks URLs to see if they are up and running and notifies when it's down
+// Author: Eduardo Quagliato <eduardo@quagliato.me>
+// MIT License
 
+// Dependencies
+var fs      = require("fs");
+var nodemailer = require("nodemailer");
+var request = require("request");
+var smtpTransport = require('nodemailer-smtp-transport');
+
+// It validates the configurations and triggers the requests to every target
+// specified in the configuration file.
 var processConfig = function(config){
   if (typeof config !== "object") {
     console.log(new Date().toISOString() + " The config file is not a array.");
@@ -31,6 +41,9 @@ var processConfig = function(config){
   }
 };
 
+// This functions requests the specified body to the specified target with the
+// specified method and process it result. If the result is not the expected,
+// it sends and notification message to the e-mail configurated.
 var requestToTarget = function(target, master_smtp_settings){
   var requestInfo = {
     "url" : target.url,
@@ -65,9 +78,8 @@ var requestToTarget = function(target, master_smtp_settings){
   });
 };
 
+// sendMail kind of explain itself, right?
 var sendMail = function(to, subject, smtp_settings, content){
-  var nodemailer = require("nodemailer");
-  var smtpTransport = require('nodemailer-smtp-transport');
 
   var transporter = nodemailer.createTransport(smtpTransport({
     host: smtp_settings.host,
@@ -99,6 +111,9 @@ var sendMail = function(to, subject, smtp_settings, content){
 };
 
 
+// This is the actual start of this script. It tries to load the configuration
+// from a environment variable or from a configuration file (which also has to
+// be setted up with a environment variable).
 if (process.env.CONFIG) {
   processConfig(JSON.parse(process.env.CONFIG));
 } else if (process.env.CONFIG_FILE) {
@@ -117,3 +132,4 @@ if (process.env.CONFIG) {
   process.exit(1);
 }
 
+// That's all, folks!
