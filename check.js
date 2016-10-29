@@ -92,7 +92,7 @@ var sendMail = function(to, subject, smtp_settings, content){
   }));
 
   while (content.indexOf("\n") >= 0) {
-    content = content.replace("\n", "\n<br>");
+    content = content.replace("\n", "<br>");
   }
 
   var mailOptions = {
