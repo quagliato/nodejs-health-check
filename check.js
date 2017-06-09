@@ -66,8 +66,8 @@ var requestToTarget = function(target, master_smtp_settings){
 
     if (error || req.statusCode !== 200) {
       var emailContent = new Date().toISOString() + " " + target.app_name + " is down!";
-      emailContent += "\n" + "Status Code: " + req.statusCode;
-      emailContent += "\n" + "Error: " + JSON.stringify(error);
+      if (req && req.statusCode) emailContent += "\n" + "Status Code: " + req.statusCode;
+      if (error) emailContent += "\n" + "Error: " + JSON.stringify(error);
       
       console.log(emailContent);
 
