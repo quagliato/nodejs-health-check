@@ -118,7 +118,7 @@ const readConfigFile = (path) => {
 
 const readConfigFileFromURL = (url) => {
   return got(url)
-    .then(response => response)
+    .then(response => response.body)
     .catch(() => {
       console.log(`${new Date().toISOString()} Could not find config file in ${url}`)
       return false;
