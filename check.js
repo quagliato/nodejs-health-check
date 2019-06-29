@@ -5,7 +5,7 @@ const got = require('got')
 
 const run = async (config) => {
   const {
-    targets
+    targets,
     master_smtp_settings
   } = processConfig(config)
   
@@ -17,7 +17,7 @@ const run = async (config) => {
 const processConfig = (config) => {
   try {
     JSON.parse(config)
-  } catch {
+  } catch (err) {
     console.log(`${new Date().toISOString()} Config information is not a valid JSON`)
     process.exit(1)
   }
@@ -40,39 +40,45 @@ const processConfig = (config) => {
 
 const testTargets = (targets) => Promise.all(targets.map(target => requestToTarget(target)))
 
-const filterResponses = (responses) => responses.filter(response !== false)
+const filterResponses = (responses) => responses.filter(response => response !== false)
 
 const sendAlerts = (responses, master_smtp_settings) => Promise.all(responses.map((response) => {
-  return new Promise({
-    const target = response.target
-    const subject = `${new Date().toISOString()} ${target.app_name} is down!`
-    const content = `${subject}\nStatus Code: ${response.statusCode}\nError: ${body}`
-    return sendMail(target.report_email,
-      subject,
-      target.smtp_settings || master_smtp_settings,
-      content)
-  })
+  const target = response.target
+  const subject = `${target.app_name} is down!`
+  const content = `${new Date().toISOString()}\n${subject}\nStatus Code: ${response.statusCode}\nError:\n${response.body}`
+  return sendMail(target.report_email,
+    subject,
+    target.smtp_settings || master_smtp_settings,
+    content)
 }))
 
 const requestToTarget = (target) => {
   if (!target.url) throw new Error('URL is mandatory')
-  const requestOpts = {
+  let requestOpts = {
     url: target.url,
-    method : target.method || 'GET',
-    body : target.body,
-    json: true
+    method : target.method || 'GET'
   }
+
+  /*
+  if (target.body) {
+    requestOpts = {
+      ...requestOpts,
+      body: target.body,
+      json: true
+    }
+  }
+  */
   
   return got(requestOpts)
     .then(response => {
-      console.log(`${new Date().toISOString()} is ok!`)
+      console.log(`${new Date().toISOString()} ${target.app_name} is ok!`)
       return false
     })
-    .catch(response => {
+    .catch(error => {
       return {
         target,
-        statusCode: response.statusCode,
-        body: response.error
+        statusCode: error.response.statusCode,
+        body: error.response.body
       }
     })
 }
@@ -89,13 +95,10 @@ const sendMail = (to, subject, smtp_settings, content) => {
     }
   }))
 
-  const htmlContent = content.replace(/\\n/g)
-
   const mailOpts = {
     to: to, // list of receivers
     subject: subject, // Subject line
     text: content, // plaintext body
-    html: htmlContent// html body
   };
 
   return transporter.sendMail(mailOpts)

@@ -7,19 +7,21 @@ url is down or no responding 200 codes for a specific set of parameters.
 
 ## Instructions
 
-Copy the *config-example.json* file to *config.json* (or what other name you
-want to) and set its path into the environment variable *CONFIG_FILE*.
+### Create a configuration JSON
 
-Inside the config file, you have to fill the SMTP info (host, port, user and 
-pass) in two ways:
+You can use the `config-example.json` file as an example to you configuration
+JSON.
 
-1. One *smtp_settings* for all apps, right on the root of the object;
+In the JSON, you need to fill the SMTP info (host, port, user and password).
+There is 2 ways to do it:
 
-2. One *smtp_settings* for each app;
+1. One `smtp_settings` for all apps, right on the root of the object;
 
-Master *smtp_settings* will always override app's *smtp_settings*.
+2. One `smtp_settings` for each app;
 
-You will also have to fill the array *targets* with an object containing this
+App's `smtp_settings` will always override root's `smtp_settings`.
+
+You also need to fill the array `targets` with objects containing the following
 properties:
 
 * **url**: The URL you want to monitor using http:// or https://;
@@ -29,6 +31,23 @@ properties:
 * **body**: If the response should have any specific body, fill it here.
 
 Place the call in the crontab of a server and that's it!
+
+### Setting your configuration
+
+There are 3 ways to inject your JSON configuration to the app:
+
+1. Set an environment variable ` HEALTH_CHECK_CONFIG_FILE` with the path to the
+file;
+
+2. Set an environment variable `HEALTH_CHECK_CONFIG` with the whole 
+configuration JSON;
+
+3. Set an environment variable `HEALTH_CHECK_CONFIG_URL` with and URL to a plain
+text configuration JSON, the app will request it via GET and parse it;
+
+### Run
+
+Simple as `$ npm start`.
 
 ## Support
 
