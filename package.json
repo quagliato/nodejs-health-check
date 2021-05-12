@@ -4,7 +4,7 @@
   "description": "Pings URLs and triggers e-mails when it's unreachable.",
   "main": "check.js",
   "dependencies": {
-    "nodemailer": "^1.8.0",
+    "nodemailer": "^6.4.16",
     "nodemailer-smtp-transport": "^1.0.3",
     "got": "^9.6.0"
   },
