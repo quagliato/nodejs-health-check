@@ -1,63 +1,47 @@
-const fs = require('fs')
-const nodemailer = require('nodemailer')
-const smtpTransport = require('nodemailer-smtp-transport')
-const got = require('got')
+require("dotenv").config();
 
-const run = async (config) => {
-  const {
-    targets,
-    master_smtp_settings
-  } = processConfig(config)
-  
+const ConfigUtils = require("./src/ConfigUtils");
+const got = require("got");
+const nodemailer = require("nodemailer");
+const smtpTransport = require("nodemailer-smtp-transport");
+
+const run = async () => {
+  const { targets, master_smtp_settings } = new ConfigUtils();
+
   return await testTargets(targets)
     .then(filterResponses)
-    .then(responses => sendAlerts(responses, master_smtp_settings))
-}
+    .then((responses) => sendAlerts(responses, master_smtp_settings));
+};
 
-const processConfig = (config) => {
-  try {
-    JSON.parse(config)
-  } catch (err) {
-    console.log(`${new Date().toISOString()} Config information is not a valid JSON`)
-    process.exit(1)
-  }
-  
-  const configObject = JSON.parse(config)
+const testTargets = (targets) =>
+  Promise.all(targets.map((target) => requestToTarget(target)));
 
-  if (!configObject 
-    || !configObject.smtp_settings
-    || !configObject.targets 
-    || configObject.targets.length === 0) {
-    console.log(`${new Date().toISOString()} Not enough configuration to proceed. Please check the targets and the SMTP settings.`)
-    process.exit(1)
-  }
-  
-  return {
-    targets: configObject.targets,
-    master_smtp_settings: configObject.smtp_settings
-  } 
-}
+const filterResponses = (responses) =>
+  responses.filter((response) => response !== false);
 
-const testTargets = (targets) => Promise.all(targets.map(target => requestToTarget(target)))
-
-const filterResponses = (responses) => responses.filter(response => response !== false)
-
-const sendAlerts = (responses, master_smtp_settings) => Promise.all(responses.map((response) => {
-  const target = response.target
-  const subject = `${target.app_name} is down!`
-  const content = `${new Date().toISOString()}\n${subject}\nStatus Code: ${response.statusCode}\nError:\n${response.body}`
-  return sendMail(target.report_email,
-    subject,
-    target.smtp_settings || master_smtp_settings,
-    content)
-}))
+const sendAlerts = (responses, master_smtp_settings) =>
+  Promise.all(
+    responses.map((response) => {
+      const target = response.target;
+      const subject = `${target.app_name} is down!`;
+      const content = `${new Date().toISOString()}\n${subject}\nStatus Code: ${
+        response.statusCode
+      }\nError:\n${response.body}\nFull stack:\n${response.error}`;
+      return sendMail(
+        target.report_email,
+        subject,
+        target.smtp_settings || master_smtp_settings,
+        content
+      );
+    })
+  );
 
 const requestToTarget = (target) => {
-  if (!target.url) throw new Error('URL is mandatory')
+  if (!target.url) throw new Error("URL is mandatory");
   let requestOpts = {
     url: target.url,
-    method : target.method || 'GET'
-  }
+    method: target.method || "GET",
+  };
 
   /*
   if (target.body) {
@@ -68,32 +52,34 @@ const requestToTarget = (target) => {
     }
   }
   */
-  
+
   return got(requestOpts)
-    .then(response => {
-      console.log(`${new Date().toISOString()} ${target.app_name} is ok!`)
-      return false
+    .then((response) => {
+      console.log(`${new Date().toISOString()} ${target.app_name} is ok!`);
+      return false;
     })
-    .catch(error => {
+    .catch((error) => {
       return {
         target,
-        statusCode: error.response.statusCode,
-        body: error.response.body
-      }
-    })
-}
+        statusCode: error?.response?.statusCode,
+        body: error?.response?.body,
+        error
+      };
+    });
+};
 
 const sendMail = (to, subject, smtp_settings, content) => {
-
-  const transporter = nodemailer.createTransport(smtpTransport({
-    host: smtp_settings.host,
-    port: smtp_settings.port,
-    ignoreTLS: false,
-    auth: {
-      user: smtp_settings.user,
-      pass: smtp_settings.pass
-    }
-  }))
+  const transporter = nodemailer.createTransport(
+    smtpTransport({
+      host: smtp_settings.host,
+      port: smtp_settings.port,
+      secure: smtp_settings.port === 465 ? true : false,
+      auth: {
+        user: smtp_settings.user,
+        pass: smtp_settings.pass,
+      },
+    })
+  );
 
   const mailOpts = {
     to: to, // list of receivers
@@ -101,43 +87,17 @@ const sendMail = (to, subject, smtp_settings, content) => {
     text: content, // plaintext body
   };
 
-  return transporter.sendMail(mailOpts)
-    .then(info => {
-      console.log(`${new Date().toISOString()} "${subject}" is sent: ${info.response}`)
-    })
-}
-
-const readConfigFile = (path) => {
-  if (!fs.lstatSync(path)) {
-    console.log(`${new Date().toISOString()} ${path} does not exist.`);
-    return false
-  }
-  
-  return fs.readFileSync(path)
-}
-
-const readConfigFileFromURL = (url) => {
-  return got(url)
-    .then(response => response.body)
-    .catch(() => {
-      console.log(`${new Date().toISOString()} Could not find config file in ${url}`)
-      return false;
-    })
-}
+  return transporter.sendMail(mailOpts).then((info) => {
+    console.log(
+      `${new Date().toISOString()} "${subject}" is sent: ${info.response}`
+    );
+  });
+};
 
 async function start() {
-  if (process.env.HEALTH_CHECK_CONFIG) {
-    return run(process.env.HEALTH_CHECK_CONFIG)
-  } else if (process.env.HEALTH_CHECK_CONFIG_FILE) {
-    return run(readConfigFile(process.env.HEALTH_CHECK_CONFIG_FILE))
-  } else if (process.env.HEALTH_CHECK_CONFIG_URL) {
-    return run(await readConfigFileFromURL(process.env.HEALTH_CHECK_CONFIG_URL))
-  } else {
-    console.log(`${new Date().toISOString()} No config set.`);
-    process.exit(1);
-  }
+  return run();
 }
 
-start()
+start();
 
 // That's all, folks!
