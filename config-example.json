@@ -3,6 +3,7 @@
     "host": "smtp.gmail.com",
     "port": 587,
     "user": "health-check@domain.tld",
+    "from": "nodejshealthcheck@domain.ltd",
     "pass": "XXXXXXXXXXXXXXXXXXXXXXX"
   },
   "targets": [

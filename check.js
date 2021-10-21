@@ -1,25 +1,25 @@
 require("dotenv").config();
 
-const ConfigUtils = require("./src/ConfigUtils");
+const ConfigUtils = require("./src/config-utils");
 const got = require("got");
 const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 
 const run = async () => {
-  const { targets, master_smtp_settings } = new ConfigUtils();
+  const { targets, masterSmtpSettings } = new ConfigUtils();
 
-  return await testTargets(targets)
-    .then(filterResponses)
-    .then((responses) => sendAlerts(responses, master_smtp_settings));
+  const testResponses = await testTargets(targets);
+  const failedTestes = filterResponses(testResponses);
+  return sendAlerts(failedTestes, masterSmtpSettings);
 };
 
 const testTargets = (targets) =>
   Promise.all(targets.map((target) => requestToTarget(target)));
 
 const filterResponses = (responses) =>
-  responses.filter((response) => response !== false);
+  responses.filter((response) => !!response);
 
-const sendAlerts = (responses, master_smtp_settings) =>
+const sendAlerts = (responses, masterSmtpSettings) =>
   Promise.all(
     responses.map((response) => {
       const target = response.target;
@@ -30,7 +30,7 @@ const sendAlerts = (responses, master_smtp_settings) =>
       return sendMail(
         target.report_email,
         subject,
-        target.smtp_settings || master_smtp_settings,
+        target.smtp_settings || masterSmtpSettings,
         content
       );
     })
@@ -43,61 +43,57 @@ const requestToTarget = (target) => {
     method: target.method || "GET",
   };
 
-  /*
-  if (target.body) {
-    requestOpts = {
-      ...requestOpts,
-      body: target.body,
-      json: true
-    }
-  }
-  */
-
   return got(requestOpts)
-    .then((response) => {
+    .then(() => {
       console.log(`${new Date().toISOString()} ${target.app_name} is ok!`);
       return false;
     })
     .catch((error) => {
+      console.log(
+        `${new Date().toISOString()} ${
+          target.app_name
+        } is down! E-mail will be sent.`
+      );
       return {
         target,
         statusCode: error?.response?.statusCode,
         body: error?.response?.body,
-        error
+        error,
       };
     });
 };
 
-const sendMail = (to, subject, smtp_settings, content) => {
+const sendMail = async (to, subject, smtpSettings, content) => {
   const transporter = nodemailer.createTransport(
     smtpTransport({
-      host: smtp_settings.host,
-      port: smtp_settings.port,
-      secure: smtp_settings.port === 465 ? true : false,
+      host: smtpSettings.host,
+      port: smtpSettings.port,
+      secure: smtpSettings.port === 465 ? true : false,
       auth: {
-        user: smtp_settings.user,
-        pass: smtp_settings.pass,
+        user: smtpSettings.user,
+        pass: smtpSettings.pass,
       },
     })
   );
 
   const mailOpts = {
-    to: to, // list of receivers
-    subject: subject, // Subject line
+    to,
+    from: smtpSettings.from,
+    subject,
     text: content, // plaintext body
+    envelope: {
+      to,
+      from: smtpSettings.from,
+    },
   };
 
-  return transporter.sendMail(mailOpts).then((info) => {
-    console.log(
-      `${new Date().toISOString()} "${subject}" is sent: ${info.response}`
-    );
-  });
+  const response = await transporter.sendMail(mailOpts);
+  console.log(
+    `${new Date().toISOString()} "${subject}" is sent: ${response.response}`
+  );
 };
 
-async function start() {
-  return run();
-}
-
-start();
-
-// That's all, folks!
+(async () => {
+  await run();
+  process.exit(0);
+})();
