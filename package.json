@@ -5,7 +5,7 @@
   "main": "check.js",
   "dependencies": {
     "dotenv": "^10.0.0",
-    "got": "^9.6.0",
+    "got": "^12.5.3",
     "nodemailer": "^6.7.0",
     "nodemailer-smtp-transport": "^1.0.3"
   },
